@@ -39,6 +39,14 @@
     "CD2_module": "Resistances",
     "CD2_field": "InternalDamageMultiplier"
   },
+  "PST_PiercingResistance": {
+    "CD2_module": "Resistances",
+    "CD2_field": "PiercingDamageMultiplier"
+  },
+  "PST_PoisonResistance": {
+    "CD2_module": "Resistances",
+    "CD2_field": "PoisonDamageMultiplier"
+  },
   "PST_RadiationResistance": {
     "CD2_module": "Resistances",
     "CD2_field": "RadiationDamageMultiplier"
