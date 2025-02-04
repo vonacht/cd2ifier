@@ -1,53 +1,124 @@
 {
-  "MaxActiveCritters": "Caps",
-  "MaxActiveSwarmers": "Caps",
-  "MaxActiveEnemies": "Caps",
-  "BaseHazard": "DifficultySetting",
-  "ExtraLargeEnemyDamageResistance": "DifficultySetting",
-  "ExtraLargeEnemyDamageResistanceB": "DifficultySetting",
-  "ExtraLargeEnemyDamageResistanceC": "DifficultySetting",
-  "ExtraLargeEnemyDamageResistanceD": "DifficultySetting",
-  "EnemyDamageResistance": "DifficultySetting",
-  "SmallEnemyDamageResistance": "DifficultySetting",
-  "EnemyDamageResistance": "DifficultySetting",
-  "EncounterDifficulty": "DifficultySetting",
-  "StationaryDifficulty": "DifficultySetting",
-  "EnemyCountModifier": "DifficultySetting",
-  "EnemyWaveInterval": "DifficultySetting",
-  "EnemyNormalWaveInterval": "DifficultySetting",
-  "EnemyNormalWaveDifficulty": "DifficultySetting",
-  "EnemyDiversity": "DifficultySetting",
-  "StationaryEnemyDiversity": "DifficultySetting",
-  "VeteranNormal": "DifficultySetting",
-  "VeteranLarge": "DifficultySetting",
-  "EnviromentalDamageModifier": "DifficultySetting",
-  "PointExtractionScalar": "DifficultySetting",
-  "FriendlyFireModifier": "DifficultySetting",
-  "WaveStartDelayScale": "DifficultySetting",
-  "SpeedModifier": "DifficultySetting",
-  "AttackCooldownModifier": "DifficultySetting",
-  "ProjectileSpeedModifier": "DifficultySetting",
-  "HealthRegenerationMax": "DifficultySetting",
-  "ReviveHealthRatio": "DifficultySetting",
-  "EnemyDamageModifier": "DifficultySetting",
-  "MaxActiveElites": "deprecated",
-  "EnvironmentalDamageModifier": "DifficultySetting",
-  "EliteCooldown": "deprecated",
-  "MinPoolSize": "Pools",
-  "DisruptiveEnemyPoolCount": "Pools",
-  "StationaryEnemycount": "Pools",
-  "CommonEnemies": "Pools",
-  "SpecialEnemies": "Pools",
-  "DisruptiveEnemies": "Pools",
-  "StationaryPool": "Pools",
-  "EnemyPool": "Pools",
-  "Name": "ignore",
-  "Description": "ignore",
-  "ResupplyCost": "ignore",
-  "StartingNitra": "ignore",
-  "EnemyDescriptors": "ignore",
-  "SeasonalEvents": "ignore",
-  "EscortMule": "ignore",
-  "HazardBonus": "deprecated",
-  "StationaryEnemies": "ignore"
+  "TOP_MODULES": {
+    "MaxActiveCritters": "Caps",
+    "MaxActiveSwarmers": "Caps",
+    "MaxActiveEnemies": "Caps",
+    "BaseHazard": "DifficultySetting",
+    "ExtraLargeEnemyDamageResistance": "DifficultySetting",
+    "ExtraLargeEnemyDamageResistanceB": "DifficultySetting",
+    "ExtraLargeEnemyDamageResistanceC": "DifficultySetting",
+    "ExtraLargeEnemyDamageResistanceD": "DifficultySetting",
+    "EnemyDamageResistance": "DifficultySetting",
+    "SmallEnemyDamageResistance": "DifficultySetting",
+    "EnemyDamageResistance": "DifficultySetting",
+    "EncounterDifficulty": "DifficultySetting",
+    "StationaryDifficulty": "DifficultySetting",
+    "EnemyCountModifier": "DifficultySetting",
+    "EnemyWaveInterval": "DifficultySetting",
+    "EnemyNormalWaveInterval": "DifficultySetting",
+    "EnemyNormalWaveDifficulty": "DifficultySetting",
+    "EnemyDiversity": "DifficultySetting",
+    "StationaryEnemyDiversity": "DifficultySetting",
+    "VeteranNormal": "DifficultySetting",
+    "VeteranLarge": "DifficultySetting",
+    "EnviromentalDamageModifier": "DifficultySetting",
+    "PointExtractionScalar": "DifficultySetting",
+    "FriendlyFireModifier": "DifficultySetting",
+    "WaveStartDelayScale": "DifficultySetting",
+    "SpeedModifier": "DifficultySetting",
+    "AttackCooldownModifier": "DifficultySetting",
+    "ProjectileSpeedModifier": "DifficultySetting",
+    "HealthRegenerationMax": "DifficultySetting",
+    "ReviveHealthRatio": "DifficultySetting",
+    "EnemyDamageModifier": "DifficultySetting",
+    "MaxActiveElites": "deprecated",
+    "EnvironmentalDamageModifier": "DifficultySetting",
+    "EliteCooldown": "deprecated",
+    "MinPoolSize": "Pools",
+    "DisruptiveEnemyPoolCount": "Pools",
+    "StationaryEnemycount": "Pools",
+    "CommonEnemies": "Pools",
+    "SpecialEnemies": "Pools",
+    "DisruptiveEnemies": "Pools",
+    "StationaryPool": "Pools",
+    "EnemyPool": "Pools",
+    "Name": "ignore",
+    "Description": "ignore",
+    "ResupplyCost": "ignore",
+    "StartingNitra": "ignore",
+    "EnemyDescriptors": "ignore",
+    "SeasonalEvents": "ignore",
+    "EscortMule": "ignore",
+    "HazardBonus": "deprecated",
+    "StationaryEnemies": "Pools"
+  },
+  "PAWN_STATS": {
+    "PST_DamageResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "DamageMultiplier"
+    },
+    "PST_MovementSpeed": {
+      "CD2_module": "Movement",
+      "CD2_field": "MaxPawnSpeed"
+    },
+    "PST_FireResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "FireDamageMultiplier"
+    },
+    "PST_CorrosiveResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "CorrosiveDamageMultiplier"
+    },
+    "PST_ElectricResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "ElectricDamageMultiplier"
+    },
+    "PST_ColdResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "ColdDamageMultiplier"
+    },
+    "PST_KineticResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "KineticDamageMultiplier"
+    },
+    "PST_PhysicalResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "PhysicalDamageMultiplier"
+    },
+    "PST_ExplosionResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "ExplosionDamageMultiplier"
+    },
+    "PST_InternalDamageResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "InternalDamageMultiplier"
+    },
+    "PST_PiercingResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "PiercingDamageMultiplier"
+    },
+    "PST_PoisonResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "PoisonDamageMultiplier"
+    },
+    "PST_RadiationResistance": {
+      "CD2_module": "Resistances",
+      "CD2_field": "RadiationDamageMultiplier"
+    }
+  },
+  "VALID_ENEMY_CONTROLS": [
+    "Rarity",
+    "CanBeUsedForConstantPressure",
+    "CanBeUsedInEncounters",
+    "DifficultyRating",
+    "MaxSpawnCount",
+    "MinSpawnCount",
+    "SpawnAmountModifier",
+    "UsesVeteranLarge",
+    "UsesSpawnRarityModifiers",
+    "SpawnRarityModifiers",
+    "SpawnSpread",
+    "TimeDilation",
+    "Scale"
+  ]
 }

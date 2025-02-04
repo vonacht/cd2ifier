@@ -54,8 +54,7 @@ fn open(path: &str) -> JsonValue {
 
 fn run(args: &Args) -> CD2ifierResult<()> {
     // Open the files containing CD1 to CD2 translation data:
-    let modules_map = open("src/cd2-modules.json");
-    let pawn_stats_map = open("src/pawn-stats.json");
+    let translation_data = open("src/cd2-modules.json");
     // Open the original difficulty file:
     let original_diff = open(&args.source_file);
 
@@ -108,11 +107,11 @@ fn run(args: &Args) -> CD2ifierResult<()> {
     // Loop over the original fields and translate them into the new top level modules
     // as specified in cd2-modules.json:
     for (key, val) in original_diff.entries() {
-        build_top_module(&modules_map, &mut target_diff, key, val);
+        build_top_module(&translation_data["TOP_MODULES"], &mut target_diff, key, val);
     }
     // Add the BaseHazard field, which is new in CD2, default to Hazard 5 for explicitness:
     build_top_module(
-        &modules_map,
+        &translation_data["TOP_MODULES"],
         &mut target_diff,
         "BaseHazard",
         &"Hazard 5".into(),
@@ -130,7 +129,7 @@ fn run(args: &Args) -> CD2ifierResult<()> {
             controls.remove("UseSpawnRarityModifiers");
             if !controls["PawnStats"].is_null() {
                 let pawn_stats = controls.remove("PawnStats");
-                translate_pawn_stats(controls, &pawn_stats, &pawn_stats_map);
+                translate_pawn_stats(controls, &pawn_stats, &translation_data["PAWN_STATS"]);
             }
         }
     }
