@@ -109,6 +109,11 @@ fn run(args: &Args) -> CD2ifierResult<()> {
         "BaseHazard",
         &"Hazard 5".into(),
     );
+    // Change the name of StationaryEnemies, which is StationaryPool in CD2:
+    let stationary_enemies = target_diff["Pools"].remove("StationaryEnemies");
+    if !stationary_enemies.is_null() {
+        target_diff["Pools"]["StationaryPool"] = stationary_enemies
+    }
     // Enemies module, copy as-is but fix the old pawn stats:
     if !original_diff["EnemyDescriptors"].is_null() {
         target_diff["EnemiesNoSync"] = original_diff["EnemyDescriptors"].clone();
