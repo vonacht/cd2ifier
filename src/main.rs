@@ -37,21 +37,23 @@ fn main() {
     }
 }
 
+fn open(path: &str) -> JsonValue {
+    let file_string = fs::read_to_string(path)
+        .unwrap_or_else(|_| panic!("Something went wrong when reading the file in {}", path));
+    json::parse(&file_string).unwrap_or_else(|_| {
+        panic!(
+            "The JSON parser couldn't parse {}. Is it a proper JSON?",
+            path
+        )
+    })
+}
+
 fn run(args: &Args) -> CD2ifierResult<()> {
     // Open the files containing CD1 to CD2 translation data:
-    let modules_string = fs::read_to_string("src/cd2-modules.json")
-        .expect("Something went wrong with the modules_map.json file.");
-    let modules_map =
-        json::parse(&modules_string).expect("Something went wrong with the modules_map file.");
-    let pawn_stats_string = fs::read_to_string("src/pawn-stats.json")
-        .expect("Something went wrong with the pawn stats data file.");
-    let pawn_stats_map = json::parse(&pawn_stats_string)
-        .expect("Something went wrong when parsing the pawn stats data file.");
+    let modules_map = open("src/cd2-modules.json");
+    let pawn_stats_map = open("src/pawn-stats.json");
     // Open the original difficulty file:
-    let original_diff_string =
-        fs::read_to_string(&args.source_file).expect("Something went wrong with the diff file.");
-    let original_diff =
-        json::parse(&original_diff_string).expect("Something went wrong with the diff file.");
+    let original_diff = open(&args.source_file);
 
     let mut target_diff = json::JsonValue::new_object();
 
