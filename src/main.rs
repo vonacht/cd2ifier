@@ -75,24 +75,32 @@ fn run(args: &Args) -> CD2ifierResult<()> {
 
     // Resupply module. Copy the cost if StartingNitra is 0 or missing, otherwise add
     // the corresponding nitra mutator:
-    let original_resupply_cost: json::number::Number =
+    let original_resupply_cost: f64 =
         if !original_diff["ResupplyCost"].is_null() && original_diff["ResupplyCost"] != 80 {
-            original_diff["ResupplyCost"]
-                .as_number()
-                .expect("The resupply cost in the original file is not a number.")
+            original_diff["ResupplyCost"].as_f64().unwrap()
         } else {
-            80.into()
+            80.00
         };
     if original_diff["StartingNitra"].is_null() || original_diff["StartingNitra"] == 0 {
         target_diff["Resupply"]["Cost"] = original_resupply_cost.into();
     } else {
+        let first_resupply: f64 = if original_diff["StartingNitra"].as_f64().unwrap()
+            >= original_resupply_cost
+        {
+            println!("Warning: This script does not support a StartingNitra higher than the resupply Cost for now.");
+            println!("It will set up the first supply free.");
+            0.0
+        } else {
+            original_resupply_cost - original_diff["StartingNitra"].as_f64().unwrap()
+        };
+
         target_diff["Resupply"]["Cost"] = object! {
             "Mutate": "IfFloat",
             "Value": {
               "Mutate": "ResuppliesCalled"
             },
             "==": 0,
-            "Then": original_diff["StartingNitra"].clone(),
+            "Then": first_resupply,
             "Else": original_resupply_cost
         }
     }
