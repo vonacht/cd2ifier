@@ -38,12 +38,16 @@ fn main() {
 }
 
 fn open(path: &str) -> JsonValue {
-    let file_string = fs::read_to_string(path)
-        .unwrap_or_else(|_| panic!("Something went wrong when reading the file in {}", path));
-    json::parse(&file_string).unwrap_or_else(|_| {
+    let file_string = fs::read_to_string(path).unwrap_or_else(|err| {
         panic!(
-            "The JSON parser couldn't parse {}. Is it a proper JSON?",
-            path
+            "Something went wrong when reading the file in {}: {}",
+            path, err
+        )
+    });
+    json::parse(&file_string).unwrap_or_else(|err| {
+        panic!(
+            "The JSON parser couldn't parse {}: {}. Is it a proper JSON?",
+            path, err
         )
     })
 }
