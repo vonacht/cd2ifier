@@ -121,7 +121,6 @@ fn run(args: &Args) -> CD2ifierResult<()> {
         target_diff["EnemiesNoSync"] = original_diff["EnemyDescriptors"].clone();
         // Fix pawn stats:
         for (enemy, controls) in target_diff["EnemiesNoSync"].entries_mut() {
-            controls.remove("UseSpawnRarityModifiers");
             if !controls["PawnStats"].is_null() {
                 let pawn_stats = controls.remove("PawnStats");
                 translate_pawn_stats(controls, &pawn_stats, &translation_data["PAWN_STATS"]);
