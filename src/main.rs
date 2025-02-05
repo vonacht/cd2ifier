@@ -110,12 +110,7 @@ fn run(args: &Args) -> CD2ifierResult<()> {
         build_top_module(&translation_data["TOP_MODULES"], &mut target_diff, key, val);
     }
     // Add the BaseHazard field, which is new in CD2, default to Hazard 5 for explicitness:
-    build_top_module(
-        &translation_data["TOP_MODULES"],
-        &mut target_diff,
-        "BaseHazard",
-        &"Hazard 5".into(),
-    );
+    target_diff["DifficultySetting"]["BaseHazard"] = "Hazard 5".into();
     // Change the name of StationaryEnemies, which is StationaryPool in CD2:
     let stationary_enemies = target_diff["Pools"].remove("StationaryEnemies");
     if !stationary_enemies.is_null() {
@@ -125,11 +120,18 @@ fn run(args: &Args) -> CD2ifierResult<()> {
     if !original_diff["EnemyDescriptors"].is_null() {
         target_diff["EnemiesNoSync"] = original_diff["EnemyDescriptors"].clone();
         // Fix pawn stats:
-        for (_, controls) in target_diff["EnemiesNoSync"].entries_mut() {
+        for (enemy, controls) in target_diff["EnemiesNoSync"].entries_mut() {
             controls.remove("UseSpawnRarityModifiers");
             if !controls["PawnStats"].is_null() {
                 let pawn_stats = controls.remove("PawnStats");
                 translate_pawn_stats(controls, &pawn_stats, &translation_data["PAWN_STATS"]);
+            }
+            let to_be_removed: Vec<_> = original_diff["EnemyDescriptors"][enemy]
+                .entries()
+                .filter(|(k, _)| !translation_data["VALID_ENEMY_CONTROLS"].contains(*k))
+                .collect();
+            for (field, _) in to_be_removed {
+                controls.remove(field);
             }
         }
     }

@@ -107,6 +107,7 @@
     }
   },
   "VALID_ENEMY_CONTROLS": [
+    "Base",
     "Rarity",
     "CanBeUsedForConstantPressure",
     "CanBeUsedInEncounters",
@@ -119,6 +120,10 @@
     "SpawnRarityModifiers",
     "SpawnSpread",
     "TimeDilation",
-    "Scale"
+    "Scale",
+    "Resistances",
+    "Movement",
+    "Elite",
+    "IdealSpawnSize"
   ]
 }
