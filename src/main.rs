@@ -27,6 +27,8 @@ impl FromStr for FieldStatus {
 struct Args {
     source_file: String,
     target_file: String,
+    #[arg(short, long)]
+    dont_pretty_print: bool,
 }
 
 fn main() {
@@ -139,13 +141,24 @@ fn run(args: &Args) -> CD2ifierResult<()> {
         target_diff["EscortMule"] = original_diff["EscortMule"].clone();
     }
 
-    // Pretty print the final string to the specified file:
-    fs::write(&args.target_file, json::stringify_pretty(target_diff, 4)).unwrap_or_else(|err| {
-        panic!(
-            "There was a problem when writing to the final file {}, {}",
-            &args.target_file, err
-        )
-    });
+    if !args.dont_pretty_print {
+        // Pretty print the final string to the specified file:
+        fs::write(&args.target_file, json::stringify_pretty(target_diff, 4)).unwrap_or_else(
+            |err| {
+                panic!(
+                    "There was a problem when writing to the final file {}, {}",
+                    &args.target_file, err
+                )
+            },
+        );
+    } else {
+        fs::write(&args.target_file, json::stringify(target_diff)).unwrap_or_else(|err| {
+            panic!(
+                "There was a problem when writing to the final file {}, {}",
+                &args.target_file, err
+            )
+        });
+    }
 
     Ok(())
 }
