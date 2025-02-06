@@ -118,7 +118,7 @@ fn run(args: &Args) -> CD2ifierResult<()> {
     if !stationary_enemies.is_null() {
         target_diff["Pools"]["StationaryPool"] = stationary_enemies
     }
-    // Enemies module, copy as-is but fix the old pawn stats:
+    // Enemies module, copy as-is but fix the old pawn stats and remove deprecated fields:
     if !original_diff["EnemyDescriptors"].is_null() {
         target_diff["EnemiesNoSync"] = original_diff["EnemyDescriptors"].clone();
         // Fix pawn stats:
@@ -127,12 +127,16 @@ fn run(args: &Args) -> CD2ifierResult<()> {
                 let pawn_stats = controls.remove("PawnStats");
                 translate_pawn_stats(controls, &pawn_stats, &translation_data["PAWN_STATS"]);
             }
-            let to_be_removed: Vec<_> = original_diff["EnemyDescriptors"][enemy]
-                .entries()
-                .filter(|(k, _)| !translation_data["VALID_ENEMY_CONTROLS"].contains(*k))
-                .collect();
-            for (field, _) in to_be_removed {
-                controls.remove(field);
+            // Remove deprecated fields:
+            for (field, _) in original_diff["EnemyDescriptors"][enemy].entries() {
+                if !translation_data["VALID_ENEMY_CONTROLS"].contains(field) && field != "PawnStats"
+                {
+                    println!(
+                        "Deprecated enemy control: {} in {}. Skipping.",
+                        field, enemy
+                    );
+                    controls.remove(field);
+                }
             }
         }
     }
