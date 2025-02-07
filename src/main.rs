@@ -145,24 +145,18 @@ fn run(args: &Args) -> CD2ifierResult<()> {
         target_diff["EscortMule"] = original_diff["EscortMule"].clone();
     }
 
-    if !args.dont_pretty_print {
-        // Pretty print the final string to the specified file:
-        fs::write(&args.target_file, json::stringify_pretty(target_diff, 4)).unwrap_or_else(
-            |err| {
-                panic!(
-                    "There was a problem when writing to the final file {}, {}",
-                    &args.target_file, err
-                )
-            },
-        );
+    let write_func = if args.dont_pretty_print {
+        json::stringify(target_diff)
     } else {
-        fs::write(&args.target_file, json::stringify(target_diff)).unwrap_or_else(|err| {
-            panic!(
-                "There was a problem when writing to the final file {}, {}",
-                &args.target_file, err
-            )
-        });
-    }
+        json::stringify_pretty(target_diff, 4)
+    };
+
+    fs::write(&args.target_file, write_func).unwrap_or_else(|err| {
+        panic!(
+            "There was a problem when writing to the final file {}, {}",
+            &args.target_file, err
+        )
+    });
 
     Ok(())
 }
