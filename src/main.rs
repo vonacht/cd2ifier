@@ -25,8 +25,11 @@ impl FromStr for FieldStatus {
 
 #[derive(Parser, Debug)]
 struct Args {
+    /// Path to the CD1 file to be converted.
     source_file: String,
+    /// Path where the translated CD2 file will be written to.
     target_file: String,
+    /// If specified, the JSON will be formatted in compact form.
     #[arg(short, long)]
     dont_pretty_print: bool,
 }
