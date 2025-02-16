@@ -29,7 +29,7 @@ struct Args {
     source_file: String,
     /// Path where the translated CD2 file will be written to.
     target_file: String,
-    /// If specified, the JSON will be formatted in compact form.
+    /// If specified, the JSON will be written in compact form.
     #[arg(short, long)]
     dont_pretty_print: bool,
 }
@@ -42,7 +42,7 @@ fn main() {
     }
 }
 
-fn open(path: &str) -> JsonValue {
+fn parse_json(path: &str) -> JsonValue {
     let file_string = fs::read_to_string(path).unwrap_or_else(|err| {
         panic!(
             "Something went wrong when reading the file in {}: {}",
@@ -59,9 +59,9 @@ fn open(path: &str) -> JsonValue {
 
 fn run(args: &Args) -> CD2ifierResult<()> {
     // Open the files containing CD1 to CD2 translation data:
-    let translation_data = open("src/cd2-modules.json");
+    let translation_data = parse_json("src/cd2-modules.json");
     // Open the original difficulty file:
-    let original_diff = open(&args.source_file);
+    let original_diff = parse_json(&args.source_file);
 
     let mut target_diff = json::JsonValue::new_object();
 
@@ -148,13 +148,15 @@ fn run(args: &Args) -> CD2ifierResult<()> {
         target_diff["EscortMule"] = original_diff["EscortMule"].clone();
     }
 
-    let write_func = if args.dont_pretty_print {
-        json::stringify(target_diff)
-    } else {
-        json::stringify_pretty(target_diff, 4)
-    };
-
-    fs::write(&args.target_file, write_func).unwrap_or_else(|err| {
+    fs::write(
+        &args.target_file,
+        if args.dont_pretty_print {
+            json::stringify(target_diff)
+        } else {
+            json::stringify_pretty(target_diff, 4)
+        },
+    )
+    .unwrap_or_else(|err| {
         panic!(
             "There was a problem when writing to the final file {}, {}",
             &args.target_file, err
