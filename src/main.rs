@@ -19,7 +19,7 @@ impl DiffContainer {
             }
         } else {
             if let Some(msg) = err_msg {
-                println!("Field {} was missing. {}", field, msg);
+                eprintln!("Field {} was missing. {}", field, msg);
             }
             self
         }
@@ -40,8 +40,8 @@ impl DiffContainer {
             let first_resupply: f64 = if self.original["StartingNitra"].as_f64().unwrap()
                 >= original_resupply_cost
             {
-                println!("Warning: This script does not support a StartingNitra higher than the resupply Cost for now.");
-                println!("It will set up the first supply free.");
+                eprintln!("Warning: This script does not support a StartingNitra higher than the resupply Cost for now.");
+                eprintln!("It will set up the first supply free.");
                 0.0
             } else {
                 original_resupply_cost - self.original["StartingNitra"].as_f64().unwrap()
@@ -78,7 +78,7 @@ impl DiffContainer {
                     if !translation_data["VALID_ENEMY_CONTROLS"].contains(field)
                         && field != "PawnStats"
                     {
-                        println!(
+                        eprintln!(
                             "Deprecated enemy control: {} in {}. Skipping.",
                             field, enemy
                         );
@@ -120,12 +120,12 @@ impl DiffContainer {
                         }
                     }
                     FieldStatus::Deprecated => {
-                        println!("Deprecated field: {}. Skipping.", original_key);
+                        eprintln!("Deprecated field: {}. Skipping.", original_key);
                     }
                     FieldStatus::Ignored => (),
                 }
             } else {
-                println!("Unsupported field: {}. Please open an issue.", original_key);
+                eprintln!("Unsupported field: {}. Please open an issue.", original_key);
             }
         }
         // Here we add the BaseHazard field, defaults to HAzard 5 for explicitness:
@@ -203,7 +203,10 @@ fn translate_pawn_stats(
             };
             controls[new_module][new_field] = new_value.clone();
         } else {
-            println!("Unsupported pawn stat: {}. Please open an issue.", stat);
+            eprintln!(
+                "Unsupported pawn stat: {}. Please open an issue. Skipping.",
+                stat
+            );
         }
     }
 }
