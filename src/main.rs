@@ -1,27 +1,16 @@
 use clap::Parser;
 use json::{object, JsonValue};
-use std::error::Error;
 use std::fs;
 use std::str::FromStr;
-
-type CD2ifierResult<T> = Result<T, Box<dyn Error>>;
 
 struct DiffContainer {
     new: JsonValue,
     original: JsonValue,
 }
 
-trait CDObject {
-    fn copy_field_if_exists(self, field: &str, err_msg: Option<&str>) -> Self;
-    fn build_resupply_module(self) -> Self;
-    fn build_enemies_module(self, translation_data: &JsonValue) -> Self;
-    fn build_top_modules(self, translation_data: &JsonValue) -> Self;
-    fn special_renames(self) -> Self;
-}
-
-impl CDObject for DiffContainer {
+impl DiffContainer {
     fn copy_field_if_exists(self, field: &str, err_msg: Option<&str>) -> Self {
-        if !self.original[field].is_null() {
+        if self.original.has_key(field) {
             let mut new = self.new.clone();
             new[field] = self.original[field].clone();
             DiffContainer {
@@ -139,13 +128,6 @@ impl CDObject for DiffContainer {
                 println!("Unsupported field: {}. Please open an issue.", original_key);
             }
         }
-        DiffContainer {
-            new,
-            original: self.original,
-        }
-    }
-    fn special_renames(self) -> Self {
-        let mut new = self.new.clone();
         // Here we add the BaseHazard field, defaults to HAzard 5 for explicitness:
         new["DifficultySetting"]["BaseHazard"] = "Hazard 5".into();
         // Change the name of StationaryEnemies, which in CD2 changed name to StationaryPool:
@@ -157,6 +139,23 @@ impl CDObject for DiffContainer {
             new,
             original: self.original,
         }
+    }
+
+    fn write_to_file(self, target_file: &str, dont_pretty_print: bool) {
+        fs::write(
+            target_file,
+            if dont_pretty_print {
+                json::stringify(self.new)
+            } else {
+                json::stringify_pretty(self.new, 4)
+            },
+        )
+        .unwrap_or_else(|err| {
+            panic!(
+                "There was a problem when writing to the final file {}, {}",
+                target_file, err
+            )
+        });
     }
 }
 
@@ -186,14 +185,6 @@ struct Args {
     /// If specified, the JSON will be written in compact form.
     #[arg(short, long)]
     dont_pretty_print: bool,
-}
-
-fn main() {
-    let args: Args = Args::parse();
-    if let Err(e) = run(&args) {
-        eprintln!("{}", e);
-        std::process::exit(1);
-    }
 }
 
 fn translate_pawn_stats(
@@ -232,10 +223,11 @@ fn parse_json(path: &str) -> JsonValue {
     })
 }
 
-fn run(args: &Args) -> CD2ifierResult<()> {
+fn run(args: &Args) {
     // Open the file containing CD1 to CD2 translation data:
     let translation_data = parse_json("src/cd2-modules.json");
-    let result = DiffContainer {
+
+    DiffContainer {
         new: json::JsonValue::new_object(),
         original: parse_json(&args.source_file),
     }
@@ -248,22 +240,10 @@ fn run(args: &Args) -> CD2ifierResult<()> {
     .build_top_modules(&translation_data["TOP_MODULES"])
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
-    .special_renames();
+    .write_to_file(&args.target_file, args.dont_pretty_print);
+}
 
-    fs::write(
-        &args.target_file,
-        if args.dont_pretty_print {
-            json::stringify(result.new)
-        } else {
-            json::stringify_pretty(result.new, 4)
-        },
-    )
-    .unwrap_or_else(|err| {
-        panic!(
-            "There was a problem when writing to the final file {}, {}",
-            &args.target_file, err
-        )
-    });
-
-    Ok(())
+fn main() {
+    let args: Args = Args::parse();
+    run(&args);
 }
