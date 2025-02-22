@@ -3,12 +3,12 @@ use json::{object, JsonValue};
 use std::fs;
 use std::str::FromStr;
 
-struct DiffContainer {
+struct DiffContainer<'a> {
     new: JsonValue,
-    original: JsonValue,
+    original: &'a JsonValue,
 }
 
-impl DiffContainer {
+impl<'a> DiffContainer<'a> {
     fn copy_field_if_exists(self, field: &str, err_msg: Option<&str>) -> Self {
         if self.original.has_key(field) {
             let mut new = self.new.clone();
@@ -229,10 +229,11 @@ fn parse_json(path: &str) -> JsonValue {
 fn run(args: &Args) {
     // Open the file containing CD1 to CD2 translation data:
     let translation_data = parse_json("src/cd2-modules.json");
+    let original_file = parse_json(&args.source_file);
 
     DiffContainer {
         new: json::JsonValue::new_object(),
-        original: parse_json(&args.source_file),
+        original: &original_file,
     }
     .copy_field_if_exists("Name", "It is recommended to add a Name".into())
     .copy_field_if_exists(
