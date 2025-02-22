@@ -220,7 +220,8 @@ fn parse_json(path: &str) -> JsonValue {
     });
     json::parse(&file_string).unwrap_or_else(|err| {
         panic!(
-            "The JSON parser couldn't parse {}: {}. Is it a proper JSON?",
+            "The JSON parser couldn't parse {}: {}. Is it a proper JSON? 
+            Please note that the script doesn't support multiline strings for now, as commonly found in descriptions.",
             path, err
         )
     })
