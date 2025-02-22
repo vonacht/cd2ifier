@@ -26,7 +26,24 @@ impl<'a> DiffContainer<'a> {
     }
     fn build_resupply_module(self) -> Self {
         // Resupply module. Copy the cost if StartingNitra is 0 or missing, otherwise add
-        // the corresponding nitra mutator:
+        // the corresponding nitra mutator
+
+        fn compute_supply_vector(starting_nitra: f64, original_cost: f64) -> Vec<f64> {
+            if starting_nitra <= original_cost {
+                vec![original_cost - starting_nitra, original_cost]
+            } else {
+                let mut supply_vector = Vec::new();
+                for _ in 0..(starting_nitra / original_cost) as i32 {
+                    supply_vector.push(0.0);
+                }
+                supply_vector.extend(vec![
+                    original_cost - starting_nitra % original_cost,
+                    original_cost,
+                ]);
+                supply_vector
+            }
+        }
+
         let mut new = self.new.clone();
         let original_resupply_cost: f64 =
             if !self.original["ResupplyCost"].is_null() && self.original["ResupplyCost"] != 80 {
@@ -37,24 +54,12 @@ impl<'a> DiffContainer<'a> {
         if self.original["StartingNitra"].is_null() || self.original["StartingNitra"] == 0 {
             new["Resupply"]["Cost"] = original_resupply_cost.into();
         } else {
-            let first_resupply: f64 = if self.original["StartingNitra"].as_f64().unwrap()
-                >= original_resupply_cost
-            {
-                eprintln!("Warning: This script does not support a StartingNitra higher than the resupply Cost for now.");
-                eprintln!("It will set up the first supply free.");
-                0.0
-            } else {
-                original_resupply_cost - self.original["StartingNitra"].as_f64().unwrap()
-            };
-
             new["Resupply"]["Cost"] = object! {
-                "Mutate": "IfFloat",
-                "Value": {
-                  "Mutate": "ResuppliesCalled"
-                },
-                "==": 0,
-                "Then": first_resupply,
-                "Else": original_resupply_cost
+                "Mutate": "ByResuppliesCalled",
+                "Value": compute_supply_vector(
+                    self.original["StartingNitra"].as_f64().unwrap(),
+                    original_resupply_cost
+                )
             }
         }
         DiffContainer {
