@@ -98,31 +98,35 @@ impl<'a> DiffContainer<'a> {
         }
     }
     fn build_top_modules(self, top_modules_map: &JsonValue) -> Self {
+        fn update_if_range_array(original_value: &JsonValue) -> JsonValue {
+            // This if block is trying to detect fields that have weights, since CD2 removes the
+            // "range" part of the bins:
+            if original_value.is_array()
+                && !original_value.is_empty()
+                && !original_value[0]["weight"].is_null()
+            {
+                original_value
+                    .members()
+                    .map(|arr| {
+                        object! {
+                            "weight": arr["weight"].clone(),
+                            "min": arr["range"]["min"].clone(),
+                            "max": arr["range"]["max"].clone()
+                        }
+                    })
+                    .collect::<Vec<JsonValue>>()
+                    .into()
+            } else {
+                original_value.clone()
+            }
+        }
+
         let mut new = self.new.clone();
         for (original_key, original_value) in self.original.entries() {
             if let Some(field_status) = top_modules_map[original_key].as_str() {
                 match FieldStatus::from_str(field_status).unwrap() {
                     FieldStatus::Valid(top_module) => {
-                        // This if block is trying to detect fields that have weights, since CD2 removes the
-                        // "range" part of the bins:
-                        if original_value.is_array()
-                            && !original_value.is_empty()
-                            && !original_value[0]["weight"].is_null()
-                        {
-                            let mut removed_ranges_arr = json::JsonValue::new_array();
-                            for bin in original_value.members() {
-                                removed_ranges_arr
-                                    .push(object! {
-                                        "weight": bin["weight"].clone(),
-                                        "min": bin["range"]["min"].clone(),
-                                        "max": bin["range"]["max"].clone()
-                                    })
-                                    .unwrap();
-                            }
-                            new[top_module][original_key] = removed_ranges_arr;
-                        } else {
-                            new[top_module][original_key] = original_value.clone();
-                        }
+                        new[top_module][original_key] = update_if_range_array(original_value);
                     }
                     FieldStatus::Deprecated => {
                         eprintln!("Deprecated field: {}. Skipping.", original_key);
