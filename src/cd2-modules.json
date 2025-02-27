@@ -125,5 +125,17 @@
     "Movement",
     "Elite",
     "IdealSpawnSize"
+  ],
+  "VANILLA_ELITE_ENEMIES": [
+    "ED_Spider_Grunt_Guard",
+    "ED_Spider_Grunt_Attacker",
+    "ED_Spider_Tank",
+    "ED_Mactera_TripleShooter",
+    "ED_Mactera_Shooter_Normal",
+    "ED_Mactera_Shooter_HeavyVeteran",
+    "ED_Grabber",
+    "ED_Spider_Shooter",
+    "ED_Spider_RapidShooter",
+    "ED_Spider_ExploderTank"
   ]
 }
