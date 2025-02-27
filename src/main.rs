@@ -56,7 +56,7 @@ impl<'a> DiffContainer<'a> {
         } else {
             new["Resupply"]["Cost"] = object! {
                 "Mutate": "ByResuppliesCalled",
-                "Value": compute_supply_vector(
+                "Values": compute_supply_vector(
                     self.original["StartingNitra"].as_f64().unwrap(),
                     original_resupply_cost
                 )
