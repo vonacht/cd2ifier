@@ -90,6 +90,19 @@ impl<'a> DiffContainer<'a> {
                         controls.remove(field);
                     }
                 }
+                // Elite detection;
+                if controls.has_key("Elite")
+                    && controls["Elite"] == true
+                    && !(&translation_data["VANILLA_ELITE_ENEMIES"])
+                        .contains(controls["Base"].clone())
+                    && (&translation_data["VANILLA_ELITE_ENEMIES"]).contains(enemy)
+                {
+                    eprintln!(
+                        "Non-vanilla enemy detected with base: {}",
+                        controls["Base"].clone()
+                    );
+                    controls["ForceEliteBase"] = enemy.into();
+                }
             }
         }
         DiffContainer {
@@ -245,10 +258,10 @@ fn run(args: &Args) {
         new: json::JsonValue::new_object(),
         original: &original_file,
     }
-    .copy_field_if_exists("Name", "It is recommended to add a Name".into())
+    .copy_field_if_exists("Name", "It is recommended to add a Name.".into())
     .copy_field_if_exists(
         "Description",
-        "It is recommended to add a Description".into(),
+        "It is recommended to add a Description.".into(),
     )
     .build_resupply_module()
     .build_top_modules(&translation_data["TOP_MODULES"])
