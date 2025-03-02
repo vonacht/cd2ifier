@@ -162,17 +162,27 @@ impl<'a> DiffContainer<'a> {
     }
 
     fn write_to_file(self, target_file: &str, dont_pretty_print: bool, multilines: Option<String>) {
-        let json_string = if let Some(mlines) = multilines {
-            recover_multilines(&json::stringify_pretty(self.new.clone(), 4), &mlines)
-        } else {
-            json::stringify_pretty(self.new.clone(), 4)
+        let append_multilines = |mlines| -> JsonValue {
+            let mut with_multilines = self.new.clone();
+            with_multilines["Description"] =
+                format! {"{}{}", self.new["Description"].as_str().unwrap(), mlines}.into();
+            with_multilines
         };
+
         fs::write(
             target_file,
             if dont_pretty_print {
-                json::stringify(self.new)
+                if let Some(mlines) = multilines {
+                    json::stringify(append_multilines(mlines))
+                } else {
+                    json::stringify(self.new)
+                }
             } else {
-                json_string
+                if let Some(mlines) = multilines {
+                    recover_multilines(&json::stringify_pretty(self.new, 4), &mlines)
+                } else {
+                    json::stringify_pretty(self.new, 4)
+                }
             },
         )
         .unwrap_or_else(|err| {
