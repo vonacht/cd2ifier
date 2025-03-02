@@ -32,15 +32,13 @@ impl<'a> DiffContainer<'a> {
             if starting_nitra <= original_cost {
                 vec![original_cost - starting_nitra, original_cost]
             } else {
-                let mut supply_vector = Vec::new();
-                for _ in 0..(starting_nitra / original_cost) as i32 {
-                    supply_vector.push(0.0);
-                }
-                supply_vector.extend(vec![
-                    original_cost - starting_nitra % original_cost,
-                    original_cost,
-                ]);
-                supply_vector
+                std::iter::repeat(0.0)
+                    .take((starting_nitra / original_cost) as usize)
+                    .chain(vec![
+                        original_cost - starting_nitra % original_cost,
+                        original_cost,
+                    ])
+                    .collect()
             }
         }
 
