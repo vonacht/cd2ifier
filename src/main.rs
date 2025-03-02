@@ -161,13 +161,18 @@ impl<'a> DiffContainer<'a> {
         }
     }
 
-    fn write_to_file(self, target_file: &str, dont_pretty_print: bool) {
+    fn write_to_file(self, target_file: &str, dont_pretty_print: bool, multilines: Option<String>) {
+        let json_string = if let Some(mlines) = multilines {
+            recover_multilines(&json::stringify_pretty(self.new.clone(), 4), &mlines)
+        } else {
+            json::stringify_pretty(self.new.clone(), 4)
+        };
         fs::write(
             target_file,
             if dont_pretty_print {
                 json::stringify(self.new)
             } else {
-                json::stringify_pretty(self.new, 4)
+                json_string
             },
         )
         .unwrap_or_else(|err| {
@@ -231,30 +236,91 @@ fn translate_pawn_stats(
     }
 }
 
-fn parse_json(path: &str) -> JsonValue {
-    let file_string = fs::read_to_string(path).unwrap_or_else(|err| {
+fn file_to_string(path: &str) -> String {
+    fs::read_to_string(path).unwrap_or_else(|err| {
         panic!(
             "Something went wrong when reading the file in {}: {}",
-            path, err
-        )
-    });
-    json::parse(&file_string).unwrap_or_else(|err| {
-        panic!(
-            "The JSON parser couldn't parse {}: {}. Is it a proper JSON? 
-            Please note that the script doesn't support multiline strings for now, as commonly found in descriptions.",
             path, err
         )
     })
 }
 
+fn parse_json(file_str: String) -> JsonValue {
+    json::parse(&file_str).unwrap_or_else(|err| {
+        panic!(
+            "The JSON parser couldn't parse the file: {}. Is it a proper JSON? 
+            Please note that the script doesn't support multiline strings for now, as commonly found in descriptions.",
+            err
+        )
+    })
+}
+
+fn check_multilines(file_str: &str) -> (String, Option<String>) {
+    let mut description_found = false;
+    let mut copied_file = Vec::new();
+    let mut multilines = Vec::new();
+    for line in file_str.lines() {
+        if !description_found {
+            if line.trim().starts_with("\"Description\"") {
+                description_found = true;
+                let line = if !line.trim().ends_with("\",") {
+                    format!("{}{}", line, "\",")
+                } else {
+                    line.to_owned()
+                };
+                copied_file.push(line);
+                continue;
+            }
+            copied_file.push(line.to_owned());
+        } else {
+            if !line.trim().starts_with("\"") || line.trim() == "\"," {
+                multilines.push(line.to_owned());
+            } else {
+                description_found = false;
+                copied_file.push(line.to_owned());
+            }
+        }
+    }
+    (
+        copied_file.join("\n"),
+        if multilines.is_empty() {
+            None
+        } else {
+            Some(multilines.join("\n"))
+        },
+    )
+}
+
+fn recover_multilines(json_string: &str, multilines: &str) -> String {
+    let mut recovered_file = Vec::new();
+    let mut description_found = false;
+    for line in json_string.lines() {
+        if !description_found {
+            if line.trim().starts_with("\"Description\"") {
+                description_found = true;
+                recovered_file.push(line.trim_end().trim_end_matches("\","));
+            } else {
+                recovered_file.push(line);
+            }
+        } else {
+            recovered_file.push(multilines);
+            description_found = false;
+            recovered_file.push(line);
+        }
+    }
+    recovered_file.join("\n")
+}
+
 fn run(args: &Args) {
     // Open the file containing CD1 to CD2 translation data:
-    let translation_data = parse_json("src/cd2-modules.json");
-    let original_file = parse_json(&args.source_file);
+    let translation_data = parse_json(file_to_string("src/cd2-modules.json"));
+    let (original_file_str, multilines) = check_multilines(&file_to_string(&args.source_file));
+    dbg!(&original_file_str);
+    let original_json = parse_json(original_file_str);
 
     DiffContainer {
         new: json::JsonValue::new_object(),
-        original: &original_file,
+        original: &original_json,
     }
     .copy_field_if_exists("Name", "It is recommended to add a Name.".into())
     .copy_field_if_exists(
@@ -265,7 +331,7 @@ fn run(args: &Args) {
     .build_top_modules(&translation_data["TOP_MODULES"])
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
-    .write_to_file(&args.target_file, args.dont_pretty_print);
+    .write_to_file(&args.target_file, args.dont_pretty_print, multilines);
 }
 
 fn main() {
