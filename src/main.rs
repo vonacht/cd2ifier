@@ -258,8 +258,7 @@ fn file_to_string(path: &str) -> String {
 fn parse_json(file_str: String) -> JsonValue {
     json::parse(&file_str).unwrap_or_else(|err| {
         panic!(
-            "The JSON parser couldn't parse the file: {}. Is it a proper JSON? 
-            Please note that the script doesn't support multiline strings for now, as commonly found in descriptions.",
+            "The JSON parser couldn't parse the file: {}. Is it a proper JSON?",
             err
         )
     })
@@ -325,7 +324,6 @@ fn run(args: &Args) {
     // Open the file containing CD1 to CD2 translation data:
     let translation_data = parse_json(file_to_string("src/cd2-modules.json"));
     let (original_file_str, multilines) = check_multilines(&file_to_string(&args.source_file));
-    dbg!(&original_file_str);
     let original_json = parse_json(original_file_str);
 
     DiffContainer {
