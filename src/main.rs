@@ -4,6 +4,7 @@ use json::{object, JsonValue};
 use std::borrow::Cow;
 use std::fs;
 use std::str::FromStr;
+use tracing::{event, Level};
 
 struct DiffContainer<'a> {
     new: JsonValue,
@@ -21,7 +22,7 @@ impl<'a> DiffContainer<'a> {
             }
         } else {
             if let Some(msg) = err_msg {
-                eprintln!("Field {} was missing. {}", field, msg);
+                event!(Level::WARN, "Field [{field}] was missing. [{msg}]");
             }
             self
         }
@@ -83,9 +84,9 @@ impl<'a> DiffContainer<'a> {
                     if !translation_data["VALID_ENEMY_CONTROLS"].contains(field)
                         && field != "PawnStats"
                     {
-                        eprintln!(
-                            "Deprecated enemy control: {} in {}. Skipping.",
-                            field, enemy
+                        event!(
+                            Level::INFO,
+                            "Deprecated enemy control: [{field}] in [{enemy}]. Skipping."
                         );
                         controls.remove(field);
                     }
@@ -97,8 +98,9 @@ impl<'a> DiffContainer<'a> {
                         .contains(controls["Base"].clone())
                     && (translation_data["VANILLA_ELITE_ENEMIES"]).contains(enemy)
                 {
-                    eprintln!(
-                        "Non-vanilla enemy detected with base: {}",
+                    event!(
+                        Level::INFO,
+                        "Non-vanilla elite enemy detected with base: [{}]",
                         controls["Base"].clone()
                     );
                     controls["ForceEliteBase"] = enemy.into();
@@ -142,12 +144,15 @@ impl<'a> DiffContainer<'a> {
                         new[top_module][original_key] = update_if_range_array(original_value);
                     }
                     FieldStatus::Deprecated => {
-                        eprintln!("Deprecated field: {}. Skipping.", original_key);
+                        event!(Level::INFO, "Deprecated field: [{original_key}]. Skipping.");
                     }
                     FieldStatus::Ignored => (),
                 }
             } else {
-                eprintln!("Unsupported field: {}. Please open an issue.", original_key);
+                event!(
+                    Level::WARN,
+                    "Unsupported field: [{original_key}]. Please open an issue."
+                );
             }
         }
         // Here we add the BaseHazard field, defaults to Hazard 5 for explicitness:
@@ -238,9 +243,9 @@ fn translate_pawn_stats(
             };
             controls[new_module][new_field] = new_value.clone();
         } else {
-            eprintln!(
-                "Unsupported pawn stat: {}. Please open an issue. Skipping.",
-                stat
+            event!(
+                Level::WARN,
+                "Unsupported pawn stat: [{stat}]. Please open an issue. Skipping."
             );
         }
     }
@@ -287,6 +292,7 @@ fn check_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
     if multiline_idx.0 == -1 {
         (Cow::Borrowed(file_str), None)
     } else {
+        event!(Level::INFO, "Multiline description detected. Saving.");
         let (multilines_removed, multilines): (Vec<_>, Vec<_>) =
             file_str.lines().enumerate().partition_map(|(ii, line)| {
                 if ii == (multiline_idx.0 - 1) as usize {
@@ -304,6 +310,7 @@ fn check_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
     }
 }
 fn recover_multilines(json_string: &str, multilines: &str) -> String {
+    event!(Level::INFO, "Recovering multiline description.");
     let mut recovered_file = Vec::new();
     let mut description_found = false;
     for line in json_string.lines() {
@@ -347,6 +354,7 @@ fn run(args: &Args) {
 }
 
 fn main() {
+    tracing_subscriber::fmt::init();
     let args: Args = Args::parse();
     run(&args);
 }
