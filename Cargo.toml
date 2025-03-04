@@ -7,3 +7,5 @@ edition = "2021"
 json = "0.12"
 clap = { version = "4.5.28", features = ["derive"] }
 itertools = "0.14.0"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
