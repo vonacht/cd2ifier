@@ -1,5 +1,7 @@
 use clap::Parser;
+use itertools::{Either, Itertools};
 use json::{object, JsonValue};
+use std::borrow::Cow;
 use std::fs;
 use std::str::FromStr;
 
@@ -91,9 +93,9 @@ impl<'a> DiffContainer<'a> {
                 // Elite detection;
                 if controls.has_key("Elite")
                     && controls["Elite"] == true
-                    && !(&translation_data["VANILLA_ELITE_ENEMIES"])
+                    && !(translation_data["VANILLA_ELITE_ENEMIES"])
                         .contains(controls["Base"].clone())
-                    && (&translation_data["VANILLA_ELITE_ENEMIES"]).contains(enemy)
+                    && (translation_data["VANILLA_ELITE_ENEMIES"]).contains(enemy)
                 {
                     eprintln!(
                         "Non-vanilla enemy detected with base: {}",
@@ -148,7 +150,7 @@ impl<'a> DiffContainer<'a> {
                 eprintln!("Unsupported field: {}. Please open an issue.", original_key);
             }
         }
-        // Here we add the BaseHazard field, defaults to HAzard 5 for explicitness:
+        // Here we add the BaseHazard field, defaults to Hazard 5 for explicitness:
         new["DifficultySetting"]["BaseHazard"] = "Hazard 5".into();
         // Change the name of StationaryEnemies, which in CD2 changed name to StationaryPool:
         let stationary_enemies = new["Pools"].remove("StationaryEnemies");
@@ -177,12 +179,10 @@ impl<'a> DiffContainer<'a> {
                 } else {
                     json::stringify(self.new)
                 }
+            } else if let Some(mlines) = multilines {
+                recover_multilines(&json::stringify_pretty(self.new, 4), &mlines)
             } else {
-                if let Some(mlines) = multilines {
-                    recover_multilines(&json::stringify_pretty(self.new, 4), &mlines)
-                } else {
-                    json::stringify_pretty(self.new, 4)
-                }
+                json::stringify_pretty(self.new, 4)
             },
         )
         .unwrap_or_else(|err| {
@@ -255,8 +255,8 @@ fn file_to_string(path: &str) -> String {
     })
 }
 
-fn parse_json(file_str: String) -> JsonValue {
-    json::parse(&file_str).unwrap_or_else(|err| {
+fn parse_json(file_str: &str) -> JsonValue {
+    json::parse(file_str).unwrap_or_else(|err| {
         panic!(
             "The JSON parser couldn't parse the file: {}. Is it a proper JSON?",
             err
@@ -264,42 +264,45 @@ fn parse_json(file_str: String) -> JsonValue {
     })
 }
 
-fn check_multilines(file_str: &str) -> (String, Option<String>) {
-    let mut description_found = false;
-    let mut copied_file = Vec::new();
-    let mut multilines = Vec::new();
-    for line in file_str.lines() {
-        if !description_found {
+/// This function checks for files that have multiline descriptions.
+/// It returns either the original file (if no multilines) or the
+/// original file with multilines removed, plus the multiline Strings as an Option
+fn check_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
+    let mut multiline_idx = (-1, -1);
+    for (line_num, line) in file_str.lines().enumerate() {
+        if multiline_idx.0 == -1 {
             if line.trim().starts_with("\"Description\"") {
-                description_found = true;
-                let line = if !line.trim().ends_with("\",") {
-                    format!("{}{}", line, "\",")
+                if line.trim_end().ends_with("\",") {
+                    // This file contains no multilines
+                    break;
                 } else {
-                    line.to_owned()
-                };
-                copied_file.push(line);
-                continue;
+                    multiline_idx.0 = (line_num + 1) as isize;
+                }
             }
-            copied_file.push(line.to_owned());
-        } else {
-            if !line.trim().starts_with("\"") || line.trim() == "\"," {
-                multilines.push(line.to_owned());
-            } else {
-                description_found = false;
-                copied_file.push(line.to_owned());
-            }
+        } else if line.trim().starts_with("\"") && line.trim() != "\"," {
+            multiline_idx.1 = (line_num - 1) as isize;
+            break;
         }
     }
-    (
-        copied_file.join("\n"),
-        if multilines.is_empty() {
-            None
-        } else {
-            Some(multilines.join("\n"))
-        },
-    )
+    if multiline_idx.0 == -1 {
+        (Cow::Borrowed(file_str), None)
+    } else {
+        let (multilines_removed, multilines): (Vec<_>, Vec<_>) =
+            file_str.lines().enumerate().partition_map(|(ii, line)| {
+                if ii == (multiline_idx.0 - 1) as usize {
+                    Either::Left(format!("{}{}", line, "\","))
+                } else if ii >= multiline_idx.0 as usize && ii <= multiline_idx.1 as usize {
+                    Either::Right(line)
+                } else {
+                    Either::Left(line.to_string())
+                }
+            });
+        (
+            Cow::Owned(multilines_removed.join("\n")),
+            Some(multilines.join("\n")),
+        )
+    }
 }
-
 fn recover_multilines(json_string: &str, multilines: &str) -> String {
     let mut recovered_file = Vec::new();
     let mut description_found = false;
@@ -322,9 +325,10 @@ fn recover_multilines(json_string: &str, multilines: &str) -> String {
 
 fn run(args: &Args) {
     // Open the file containing CD1 to CD2 translation data:
-    let translation_data = parse_json(file_to_string("src/cd2-modules.json"));
-    let (original_file_str, multilines) = check_multilines(&file_to_string(&args.source_file));
-    let original_json = parse_json(original_file_str);
+    let translation_data = parse_json(&file_to_string("src/cd2-modules.json"));
+    let original_file_str = &file_to_string(&args.source_file);
+    let (original_file_str, multilines) = check_multilines(original_file_str);
+    let original_json = parse_json(&original_file_str);
 
     DiffContainer {
         new: json::JsonValue::new_object(),
