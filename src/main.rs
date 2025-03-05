@@ -269,10 +269,15 @@ fn parse_json(file_str: &str) -> JsonValue {
     })
 }
 
+fn parse_json_with_multilines(file_path: &str) -> (JsonValue, Option<String>) {
+    let original_file_str = file_to_string(file_path);
+    let (original_file_str, multilines) = maybe_extract_multilines(&original_file_str);
+    (parse_json(&original_file_str), multilines)
+}
 /// This function checks for files that have multiline descriptions.
 /// It returns either the original file (if no multilines) or the
 /// original file with multilines removed, plus the multiline Strings as an Option
-fn check_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
+fn maybe_extract_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
     let mut multiline_idx = (-1, -1);
     for (line_num, line) in file_str.lines().enumerate() {
         if multiline_idx.0 == -1 {
@@ -333,13 +338,11 @@ fn recover_multilines(json_string: &str, multilines: &str) -> String {
 fn run(args: &Args) {
     // Open the file containing CD1 to CD2 translation data:
     let translation_data = parse_json(&file_to_string("src/cd2-modules.json"));
-    let original_file_str = &file_to_string(&args.source_file);
-    let (original_file_str, multilines) = check_multilines(original_file_str);
-    let original_json = parse_json(&original_file_str);
+    let (cd1_json, multilines) = parse_json_with_multilines(&args.source_file);
 
     DiffContainer {
         new: json::JsonValue::new_object(),
-        original: &original_json,
+        original: &cd1_json,
     }
     .copy_field_if_exists("Name", "It is recommended to add a Name.".into())
     .copy_field_if_exists(
