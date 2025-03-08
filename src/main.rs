@@ -77,7 +77,12 @@ impl<'a> DiffContainer<'a> {
             for (enemy, controls) in new["EnemiesNoSync"].entries_mut() {
                 if !controls["PawnStats"].is_null() {
                     let pawn_stats = controls.remove("PawnStats");
-                    translate_pawn_stats(controls, &pawn_stats, &translation_data["PAWN_STATS"]);
+                    translate_pawn_stats(
+                        controls,
+                        &pawn_stats,
+                        &translation_data["PAWN_STATS"],
+                        enemy,
+                    );
                 }
                 // Remove deprecated fields:
                 for (field, _) in self.original["EnemyDescriptors"][enemy].entries() {
@@ -231,6 +236,7 @@ fn translate_pawn_stats(
     controls: &mut JsonValue,
     pawn_stats: &JsonValue,
     pawn_stats_map: &JsonValue,
+    enemy: &str,
 ) {
     for (stat, value) in pawn_stats.entries() {
         if !pawn_stats_map[stat].is_null() {
@@ -245,7 +251,7 @@ fn translate_pawn_stats(
         } else {
             event!(
                 Level::WARN,
-                "Unsupported pawn stat: [{stat}]. Please open an issue. Skipping."
+                "Unsupported pawn stat: [{stat}] on enemy [{enemy}]. Please open an issue. Skipping."
             );
         }
     }
