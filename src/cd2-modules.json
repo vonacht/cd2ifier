@@ -57,10 +57,6 @@
       "CD2_module": "Resistances",
       "CD2_field": "DamageMultiplier"
     },
-    "PST_MovementSpeed": {
-      "CD2_module": "Movement",
-      "CD2_field": "MaxPawnSpeed"
-    },
     "PST_FireResistance": {
       "CD2_module": "Resistances",
       "CD2_field": "FireDamageMultiplier"
@@ -104,6 +100,30 @@
     "PST_RadiationResistance": {
       "CD2_module": "Resistances",
       "CD2_field": "RadiationDamageMultiplier"
+    },
+    "PST_DamageBonus": {
+      "CD2_module": "None",
+      "CD2_field": "AttackDamageMultiplier"
+    },
+    "PST_MovementSpeed": {
+      "CD2_module": "None",
+      "CD2_field": "PST_MovementSpeed"
+    },
+    "PST_CritChance": {
+      "CD2_module": "None",
+      "CD2_field": "PST_CritChance"
+    },
+    "PST_CritBonusDamage": {
+      "CD2_module": "None",
+      "CD2_field": "PST_CritBonusDamage"
+    },
+    "PST_DamageFromPlayers": {
+      "CD2_module": "None",
+      "CD2_field": "PST_DamageFromPlayers"
+    },
+    "PST_ExplodeOnDeath": {
+      "CD2_module": "None",
+      "CD2_field": "PST_ExplodeOnDeath"
     }
   },
   "VALID_ENEMY_CONTROLS": [

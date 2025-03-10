@@ -92,7 +92,7 @@ impl<'a> DiffContainer<'a> {
                     {
                         event!(
                             Level::INFO,
-                            "Deprecated enemy control: [{field}] in [{enemy}]. Skipping."
+                            "Deprecated or mistyped enemy control: [{field}] in [{enemy}]. Skipping."
                         );
                         controls.remove(field);
                     }
@@ -253,7 +253,11 @@ fn translate_pawn_stats(
             } else {
                 &(1.0 - value.as_f64().unwrap()).into()
             };
-            controls[new_module][new_field] = new_value.clone();
+            if new_module == "None" {
+                controls[new_field] = new_value.clone();
+            } else {
+                controls[new_module][new_field] = new_value.clone();
+            }
         } else {
             event!(
                 Level::WARN,
@@ -363,7 +367,7 @@ fn run(args: &Args) -> Result<()> {
 }
 
 fn main() {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt().with_ansi(false).init();
     let args: Args = Args::parse();
     if let Err(e) = run(&args) {
         event!(Level::ERROR, "{:#}", e);
