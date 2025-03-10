@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use clap::Parser;
 use itertools::{Either, Itertools};
 use json::{object, JsonValue};
@@ -173,7 +174,12 @@ impl<'a> DiffContainer<'a> {
         }
     }
 
-    fn write_to_file(self, target_file: &str, dont_pretty_print: bool, multilines: Option<String>) {
+    fn write_to_file(
+        self,
+        target_file: &str,
+        dont_pretty_print: bool,
+        multilines: Option<String>,
+    ) -> Result<()> {
         let append_multilines = |mlines| -> JsonValue {
             let mut with_multilines = self.new.clone();
             with_multilines["Description"] =
@@ -195,12 +201,12 @@ impl<'a> DiffContainer<'a> {
                 json::stringify_pretty(self.new, 4)
             },
         )
-        .unwrap_or_else(|err| {
-            panic!(
-                "There was a problem when writing to the final file {}, {}",
-                target_file, err
+        .with_context(|| {
+            format!(
+                "There was a problem when writing to the final file {}",
+                target_file
             )
-        });
+        })
     }
 }
 
@@ -257,28 +263,20 @@ fn translate_pawn_stats(
     }
 }
 
-fn file_to_string(path: &str) -> String {
-    fs::read_to_string(path).unwrap_or_else(|err| {
-        panic!(
-            "Something went wrong when reading the file in {}: {}",
-            path, err
-        )
-    })
+fn file_to_string(path: &str) -> Result<String> {
+    fs::read_to_string(path)
+        .with_context(|| format!("Something went wrong when reading the file {}", path))
 }
 
-fn parse_json(file_str: &str) -> JsonValue {
-    json::parse(file_str).unwrap_or_else(|err| {
-        panic!(
-            "The JSON parser couldn't parse the file: {}. Is it a proper JSON?",
-            err
-        )
-    })
+fn parse_json(file_str: &str) -> Result<JsonValue> {
+    json::parse(file_str)
+        .with_context(|| format!("The JSON parser couldn't parse the file. Is it a proper JSON?",))
 }
 
-fn parse_json_with_multilines(file_path: &str) -> (JsonValue, Option<String>) {
-    let original_file_str = file_to_string(file_path);
+fn parse_json_with_multilines(file_path: &str) -> Result<(JsonValue, Option<String>)> {
+    let original_file_str = file_to_string(file_path)?;
     let (original_file_str, multilines) = maybe_extract_multilines(&original_file_str);
-    (parse_json(&original_file_str), multilines)
+    Ok((parse_json(&original_file_str)?, multilines))
 }
 /// This function checks for files that have multiline descriptions.
 /// It returns either the original file (if no multilines) or the
@@ -341,10 +339,10 @@ fn recover_multilines(json_string: &str, multilines: &str) -> String {
     recovered_file.join("\n")
 }
 
-fn run(args: &Args) {
+fn run(args: &Args) -> Result<()> {
     // Open the file containing CD1 to CD2 translation data:
-    let translation_data = parse_json(&file_to_string("src/cd2-modules.json"));
-    let (cd1_json, multilines) = parse_json_with_multilines(&args.source_file);
+    let translation_data = parse_json(&file_to_string("src/cd2-modules.json")?)?;
+    let (cd1_json, multilines) = parse_json_with_multilines(&args.source_file)?;
 
     DiffContainer {
         new: json::JsonValue::new_object(),
@@ -359,11 +357,16 @@ fn run(args: &Args) {
     .build_top_modules(&translation_data["TOP_MODULES"])
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
-    .write_to_file(&args.target_file, args.dont_pretty_print, multilines);
+    .write_to_file(&args.target_file, args.dont_pretty_print, multilines)?;
+
+    Ok(())
 }
 
 fn main() {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().init();
     let args: Args = Args::parse();
-    run(&args);
+    if let Err(e) = run(&args) {
+        event!(Level::ERROR, "{:#}", e);
+        event!(Level::ERROR, "Conversion unfinished. Exiting.");
+    }
 }
