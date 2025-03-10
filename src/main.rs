@@ -248,7 +248,7 @@ fn translate_pawn_stats(
         if !pawn_stats_map[stat].is_null() {
             let new_module = pawn_stats_map[stat]["CD2_module"].as_str().unwrap();
             let new_field = pawn_stats_map[stat]["CD2_field"].as_str().unwrap();
-            let new_value = if stat == "PST_DamageResistance" || stat == "PST_MovementSpeed" {
+            let new_value = if new_module != "Resistances" || stat == "PST_DamageResistance" {
                 value
             } else {
                 &(1.0 - value.as_f64().unwrap()).into()
