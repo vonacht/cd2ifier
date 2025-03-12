@@ -4,6 +4,7 @@ use itertools::{Either, Itertools};
 use json::{object, JsonValue};
 use std::borrow::Cow;
 use std::fs;
+use std::path::Path;
 use std::str::FromStr;
 use tracing::{event, Level};
 
@@ -231,8 +232,9 @@ impl FromStr for FieldStatus {
 struct Args {
     /// Path to the CD1 file to be converted.
     source_file: String,
-    /// Path where the translated CD2 file will be written to.
-    target_file: String,
+    /// Path where the translated CD2 file will be written to. If not specified, the script will
+    /// append .cd2 to the original file name
+    target_file: Option<String>,
     /// If specified, the JSON will be written in compact form.
     #[arg(short, long)]
     dont_pretty_print: bool,
@@ -343,6 +345,25 @@ fn recover_multilines(json_string: &str, multilines: &str) -> String {
     recovered_file.join("\n")
 }
 
+fn file_name(source: &str, target: Option<String>) -> String {
+    if let Some(name) = target {
+        name
+    } else {
+        let file_name = Path::new(source)
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let extension = Path::new(source).extension();
+        if let Some(extension) = extension {
+            format!("{}.cd2.{}", file_name, extension.to_str().unwrap())
+        } else {
+            format!("{file_name}.cd2")
+        }
+    }
+}
+
 fn run(args: &Args) -> Result<()> {
     // Open the file containing CD1 to CD2 translation data:
     let translation_data = parse_json(&file_to_string("src/cd2-modules.json")?)?;
@@ -361,7 +382,11 @@ fn run(args: &Args) -> Result<()> {
     .build_top_modules(&translation_data["TOP_MODULES"])
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
-    .write_to_file(&args.target_file, args.dont_pretty_print, multilines)?;
+    .write_to_file(
+        &file_name(&args.source_file, args.target_file.clone()),
+        args.dont_pretty_print,
+        multilines,
+    )?;
 
     Ok(())
 }
