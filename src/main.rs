@@ -345,16 +345,11 @@ fn recover_multilines(json_string: &str, multilines: &str) -> String {
     recovered_file.join("\n")
 }
 
-fn file_name(source: &str, target: Option<String>) -> String {
+fn file_name(source: &str, target: Option<&String>) -> String {
     if let Some(name) = target {
-        name
+        name.clone()
     } else {
-        let file_name = Path::new(source)
-            .file_stem()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+        let file_name = Path::new(source).file_stem().unwrap().to_str().unwrap();
         let extension = Path::new(source).extension();
         if let Some(extension) = extension {
             format!("{}.cd2.{}", file_name, extension.to_str().unwrap())
@@ -383,7 +378,7 @@ fn run(args: &Args) -> Result<()> {
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
     .write_to_file(
-        &file_name(&args.source_file, args.target_file.clone()),
+        &file_name(&args.source_file, args.target_file.as_ref()),
         args.dont_pretty_print,
         multilines,
     )?;
