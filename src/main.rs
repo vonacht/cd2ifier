@@ -2,10 +2,10 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use itertools::{Either, Itertools};
 use json::{object, JsonValue};
-use std::borrow::Cow;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
+use std::{borrow::Cow, io::IsTerminal};
 use tracing::{event, Level};
 
 struct DiffContainer<'a> {
@@ -276,7 +276,7 @@ fn file_to_string(path: &str) -> Result<String> {
 
 fn parse_json(file_str: &str) -> Result<JsonValue> {
     json::parse(file_str)
-        .with_context(|| format!("The JSON parser couldn't parse the file. Is it a proper JSON?",))
+        .with_context(|| "The JSON parser couldn't parse the file. Is it a proper JSON?")
 }
 
 fn parse_json_with_multilines(file_path: &str) -> Result<(JsonValue, Option<String>)> {
@@ -345,17 +345,17 @@ fn recover_multilines(json_string: &str, multilines: &str) -> String {
     recovered_file.join("\n")
 }
 
-fn file_name(source: &str, target: Option<&String>) -> String {
+fn file_name<'a>(source: &'a str, target: Option<&'a str>) -> Cow<'a, str> {
     if let Some(name) = target {
-        name.clone()
+        Cow::Borrowed(name)
     } else {
         let file_name = Path::new(source).file_stem().unwrap().to_str().unwrap();
         let extension = Path::new(source).extension();
-        if let Some(extension) = extension {
+        Cow::Owned(if let Some(extension) = extension {
             format!("{}.cd2.{}", file_name, extension.to_str().unwrap())
         } else {
             format!("{file_name}.cd2")
-        }
+        })
     }
 }
 
@@ -378,7 +378,7 @@ fn run(args: &Args) -> Result<()> {
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
     .write_to_file(
-        &file_name(&args.source_file, args.target_file.as_ref()),
+        &file_name(&args.source_file, args.target_file.as_deref()),
         args.dont_pretty_print,
         multilines,
     )?;
@@ -387,7 +387,10 @@ fn run(args: &Args) -> Result<()> {
 }
 
 fn main() {
-    tracing_subscriber::fmt().with_ansi(false).init();
+    tracing_subscriber::fmt()
+        .without_time()
+        .with_ansi(std::io::stdout().is_terminal())
+        .init();
     let args: Args = Args::parse();
     if let Err(e) = run(&args) {
         event!(Level::ERROR, "{:#}", e);
