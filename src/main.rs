@@ -255,11 +255,7 @@ fn translate_pawn_stats(
             } else {
                 &(1.0 - value.as_f64().unwrap()).into()
             };
-            if new_module == "None" {
-                controls[new_field] = new_value.clone();
-            } else {
-                controls[new_module][new_field] = new_value.clone();
-            }
+            controls[new_module][new_field] = new_value.clone();
         } else {
             event!(
                 Level::WARN,
@@ -288,31 +284,31 @@ fn parse_json_with_multilines(file_path: &str) -> Result<(JsonValue, Option<Stri
 /// It returns either the original file (if no multilines) or the
 /// original file with multilines removed, plus the multiline Strings as an Option
 fn maybe_extract_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
-    let mut multiline_idx = (-1, -1);
+    let mut multiline_idx = (None, None);
     for (line_num, line) in file_str.lines().enumerate() {
-        if multiline_idx.0 == -1 {
+        if multiline_idx.0.is_none() {
             if line.trim().starts_with("\"Description\"") {
                 if line.trim_end().ends_with("\",") {
-                    // This file contains no multilines
+                    // This file contains no multilines, we exit
                     break;
                 } else {
-                    multiline_idx.0 = (line_num + 1) as isize;
+                    // This file contains a multiline description,
+                    // save the line_num in multiline_idx:
+                    multiline_idx.0 = Some(line_num + 1);
                 }
             }
         } else if line.trim().starts_with("\"") && line.trim() != "\"," {
-            multiline_idx.1 = (line_num - 1) as isize;
+            multiline_idx.1 = Some(line_num - 1);
             break;
         }
     }
-    if multiline_idx.0 == -1 {
-        (Cow::Borrowed(file_str), None)
-    } else {
+    if let (Some(start_multiline), Some(end_multiline)) = multiline_idx {
         event!(Level::INFO, "Multiline description detected. Saving.");
         let (multilines_removed, multilines): (Vec<_>, Vec<_>) =
             file_str.lines().enumerate().partition_map(|(ii, line)| {
-                if ii == (multiline_idx.0 - 1) as usize {
+                if ii == start_multiline - 1 {
                     Either::Left(format!("{}{}", line, "\","))
-                } else if ii >= multiline_idx.0 as usize && ii <= multiline_idx.1 as usize {
+                } else if ii >= start_multiline && ii <= end_multiline {
                     Either::Right(line)
                 } else {
                     Either::Left(line.to_string())
@@ -322,6 +318,8 @@ fn maybe_extract_multilines(file_str: &str) -> (Cow<str>, Option<String>) {
             Cow::Owned(multilines_removed.join("\n")),
             Some(multilines.join("\n")),
         )
+    } else {
+        (Cow::Borrowed(file_str), None)
     }
 }
 fn recover_multilines(json_string: &str, multilines: &str) -> String {
@@ -363,6 +361,7 @@ fn run(args: &Args) -> Result<()> {
     // Open the file containing CD1 to CD2 translation data:
     let translation_data = parse_json(&file_to_string("src/cd2-modules.json")?)?;
     let (cd1_json, multilines) = parse_json_with_multilines(&args.source_file)?;
+    let file_name = file_name(&args.source_file, args.target_file.as_deref());
 
     DiffContainer {
         new: json::JsonValue::new_object(),
@@ -377,11 +376,13 @@ fn run(args: &Args) -> Result<()> {
     .build_top_modules(&translation_data["TOP_MODULES"])
     .build_enemies_module(&translation_data)
     .copy_field_if_exists("EscortMule", None)
-    .write_to_file(
-        &file_name(&args.source_file, args.target_file.as_deref()),
-        args.dont_pretty_print,
-        multilines,
-    )?;
+    .write_to_file(&file_name, args.dont_pretty_print, multilines)?;
+
+    event!(
+        Level::INFO,
+        "Conversion finished, saving on file: {}",
+        file_name
+    );
 
     Ok(())
 }
